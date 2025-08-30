@@ -140,16 +140,32 @@ export function CustomerSelector({ onCustomerSelect, selectedCustomer }: Custome
   const moralCustomers = customers.filter(c => 'RAISON_SOCIALE' in c);
 
   const sliderSettings = {
-    dots: false,
-    infinite: false,
-    speed: 500,
-    slidesToShow: 3,
-    slidesToScroll: 1,
-    arrows: true,
-    adaptiveHeight: false,
-    prevArrow: <Arrow direction="left" />,
-    nextArrow: <Arrow direction="right" />,
-  };
+  dots: false,
+  infinite: false,
+  speed: 500,
+  slidesToShow: 3,
+  slidesToScroll: 1,
+  arrows: true,
+  adaptiveHeight: false,
+  nextArrow: <SampleNextArrow />,
+  prevArrow: <SamplePrevArrow />,
+  responsive: [
+    {
+      breakpoint: 1024,
+      settings: {
+        slidesToShow: 2,
+        slidesToScroll: 1,
+      }
+    },
+    {
+      breakpoint: 768,
+      settings: {
+        slidesToShow: 1,
+        slidesToScroll: 1,
+      }
+    }
+  ]
+};
 
   // Search modal logic
   const handleSearch = () => {
@@ -237,6 +253,72 @@ export function CustomerSelector({ onCustomerSelect, selectedCustomer }: Custome
     setHasSearched(false);
     setCurrentPage(1);
   };
+
+
+  // Fixed Arrow Components with centered arrows
+function SampleNextArrow(props: any) {
+  const { className, style, onClick } = props;
+  return (
+    <div
+      className={className}
+      style={{ 
+        ...style, 
+        display: "flex", 
+        alignItems: "center", 
+        justifyContent: "center",
+        background: "rgba(0, 0, 0, 0.5)", 
+        borderRadius: "50%", 
+        width: "40px", 
+        height: "40px", 
+        right: "-20px", 
+        zIndex: 1,
+        cursor: "pointer"
+      }}
+      onClick={onClick}
+    >
+      <span style={{ 
+        color: "white", 
+        fontSize: "20px", 
+        fontWeight: "bold",
+        display: "block",
+        lineHeight: "1",
+        marginTop: "-2px" // Small adjustment for perfect centering
+      }}>→</span>
+    </div>
+  );
+}
+
+function SamplePrevArrow(props: any) {
+  const { className, style, onClick } = props;
+  return (
+    <div
+      className={className}
+      style={{ 
+        ...style, 
+        display: "flex", 
+        alignItems: "center", 
+        justifyContent: "center",
+        background: "rgba(0, 0, 0, 0.5)", 
+        borderRadius: "50%", 
+        width: "40px", 
+        height: "40px", 
+        left: "-20px", 
+        zIndex: 1,
+        cursor: "pointer"
+      }}
+      onClick={onClick}
+    >
+      <span style={{ 
+        color: "white", 
+        fontSize: "20px", 
+        fontWeight: "bold",
+        display: "block",
+        lineHeight: "1",
+        marginTop: "-2px" // Small adjustment for perfect centering
+      }}>←</span>
+    </div>
+  );
+}
 
   if (loading) {
     return (
