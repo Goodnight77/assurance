@@ -29,7 +29,7 @@ class DataService {
     try {
       const response = await fetch('/assurance-data.json');
       const json = await response.json();
-      this.personnesPhysiques = (json.personnesPhysiques || []).slice(0, 10);
+      this.personnesPhysiques = (json.personnesPhysiques || []).slice(0, 1000);
       this.personnesMorales = (json.personnesMorales || []).slice(0, 10);
       this.contrats = json.contrats || [];
       this.sinistres = json.sinistres || [];
