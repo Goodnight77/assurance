@@ -1,11 +1,31 @@
 import React, { useState } from "react";
 import ContactModal from "./ContactModal";
 import AgenciesModal from "./AgenciesModal";
+import { Button } from "@/components/ui/button";
+import { LogOut } from "lucide-react";
+import { useToast } from "@/components/ui/use-toast";
 
 const LogoBar: React.FC = () => {
   const currentPath = window.location.pathname;
   const [isContactModalOpen, setIsContactModalOpen] = useState(false);
   const [isAgenciesModalOpen, setIsAgenciesModalOpen] = useState(false);
+  const { toast } = useToast();
+
+  const handleLogout = () => {
+    // Remove authentication data from localStorage
+    localStorage.removeItem("authData");
+    
+    // Show success message
+    toast({
+      title: "Logged out successfully",
+      description: "You have been logged out of your account.",
+    });
+    
+    // Redirect to login page after a short delay
+    setTimeout(() => {
+      window.location.href = "/";
+    }, 1000);
+  };
 
   return (
     <div style={{
@@ -19,24 +39,22 @@ const LogoBar: React.FC = () => {
       zIndex: 40,
       position: "relative",
     }}>
-      <a href="/" style={{ display: "flex", alignItems: "center", textDecoration: 'none' }}>
+      <a href="/agent" style={{ display: "flex", alignItems: "center", textDecoration: 'none' }}>
         <img 
           src="/bh-assurance-logo.png" 
           alt="BH Assurance Logo" 
           style={{ height: "32px", marginLeft: "0" }} 
         />
-        <span style={{ fontWeight: 700, fontSize: "1.5rem", marginLeft: "1rem", color: "#222" }}>
-          ASSURANCE
-        </span>
       </a>
-      <nav style={{ display: "flex", gap: "1.5rem" }}>
+      
+      <nav style={{ display: "flex", gap: "1.5rem", alignItems: "center" }}>
         <a 
-          href="/" 
+          href="/agent" 
           style={{ 
-            color: currentPath === "/" ? "#ec0000" : "#222", 
+            color: currentPath === "/agent" ? "#ec0000" : "#222", 
             textDecoration: "none", 
             fontSize: "1rem", 
-            fontWeight: currentPath === "/" ? 700 : 500 
+            fontWeight: currentPath === "/agent" ? 700 : 500 
           }}
         >
           Agent
@@ -64,7 +82,24 @@ const LogoBar: React.FC = () => {
         >
           Contact
         </button>
+        
+        {/* Logout Button */}
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleLogout}
+          className="flex items-center gap-2 ml-4"
+          style={{ 
+            borderColor: "#DF271C", 
+            color: "#DF271C",
+            padding: "0.4rem 0.8rem"
+          }}
+        >
+          <LogOut className="w-4 h-4" />
+          Logout
+        </Button>
       </nav>
+      
       <ContactModal isOpen={isContactModalOpen} onClose={() => setIsContactModalOpen(false)} />
       <AgenciesModal isOpen={isAgenciesModalOpen} onClose={() => setIsAgenciesModalOpen(false)} />
     </div>
