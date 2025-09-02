@@ -1,4 +1,4 @@
-# Welcome to your Lovable project
+# Welcome to BH AI ASSURANCE project
 
 ## Project info
 
@@ -10,9 +10,7 @@ There are several ways of editing your application.
 
 **Use Lovable**
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/7632a405-452d-48f2-924b-a5cb02f46432) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
+Simply visit the [Lovable Project](https://lovable.dev/projects/7632a405-452d-48f2-924b-a5cb02f46432) 
 
 **Use your preferred IDE**
 
@@ -27,7 +25,7 @@ Follow these steps:
 git clone <YOUR_GIT_URL>
 
 # Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+cd assurance
 
 # Step 3: Install the necessary dependencies.
 npm i
