@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 import type { CommercialPitch, ProductRecommendation } from '@/types/insurance';
 
 interface CommercialPitchDisplayProps {
@@ -38,6 +39,15 @@ export function CommercialPitchDisplay({ commercialPitch, onFeedbackSubmit }: Co
   const [improvementSuggestions, setImprovementSuggestions] = useState('');
   const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
   const { toast } = useToast();
+  const { authData } = useAuth();
+
+  const [isEditing, setIsEditing] = useState(false)
+  const [message, setMessage] = useState(commercialPitch.personalizedMessage)
+
+  const handleSave = () => {
+    setIsEditing(false)
+    // 👉 optionally call API or update parent state with `message`
+  }
 
   const getChannelIcon = (channel: string) => {
     switch (channel) {
@@ -94,8 +104,39 @@ export function CommercialPitchDisplay({ commercialPitch, onFeedbackSubmit }: Co
     }
 
     setIsSubmittingFeedback(true);
-    
+
     try {
+      const feedbackData = {
+        commercialPitch: commercialPitch.personalizedMessage,
+        customerId: commercialPitch.customerId,
+        pitchId: `pitch_${Date.now()}`,
+        agentEmail: authData?.email || 'unknown@example.com',
+        agentNotes,
+        customerResponse,
+        improvementSuggestions,
+        timestamp: new Date().toISOString(),
+      };
+
+      // 🔹 Send feedback to local server to store in feedback/feedback.json
+      const response = await fetch('http://localhost:3001/api/save-feedback', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(feedbackData),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save feedback to file');
+      }
+
+      const result = await response.json();
+
+      // 🔹 Log JSON in the console
+      console.log("Feedback JSON:", JSON.stringify(feedbackData, null, 2));
+      console.log("Server response:", result);
+
+      // 🔹 Call your submit handler if provided
       await onFeedbackSubmit?.({
         customerId: commercialPitch.customerId,
         pitchId: `pitch_${Date.now()}`,
@@ -106,7 +147,7 @@ export function CommercialPitchDisplay({ commercialPitch, onFeedbackSubmit }: Co
 
       toast({
         title: "Feedback enregistré",
-        description: "Vos retours ont été enregistrés avec succès.",
+        description: `Vos retours ont été sauvegardés dans feedback.json (${result.count} feedback total).`,
       });
 
       // Reset form
@@ -114,6 +155,7 @@ export function CommercialPitchDisplay({ commercialPitch, onFeedbackSubmit }: Co
       setImprovementSuggestions('');
       
     } catch (error) {
+      console.error('Error saving feedback:', error);
       toast({
         title: "Erreur",
         description: "Impossible d'enregistrer le feedback.",
@@ -188,10 +230,10 @@ export function CommercialPitchDisplay({ commercialPitch, onFeedbackSubmit }: Co
                   <Edit className="h-5 w-5 text-primary" />
                   Message Commercial
                 </span>
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   size="sm"
-                  onClick={() => copyToClipboard(commercialPitch.personalizedMessage)}
+                  onClick={() => copyToClipboard(message)}
                 >
                   <Copy className="h-4 w-4 mr-2" />
                   Copier
@@ -200,20 +242,36 @@ export function CommercialPitchDisplay({ commercialPitch, onFeedbackSubmit }: Co
             </CardHeader>
             <CardContent>
               <div className="prose prose-sm max-w-none">
-                <div className="p-4 bg-muted rounded-lg whitespace-pre-wrap">
-                  {commercialPitch.personalizedMessage}
-                </div>
+                {isEditing ? (
+                  <textarea
+                    className="w-full p-4 bg-muted rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary"
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                    rows={6}
+                  />
+                ) : (
+                  <div className="p-4 bg-muted rounded-lg whitespace-pre-wrap">
+                    {message}
+                  </div>
+                )}
               </div>
-              
+
               <div className="mt-4 flex gap-2">
                 <Button>
                   <Send className="h-4 w-4 mr-2" />
                   Envoyer par {getChannelLabel(commercialPitch.communicationChannel)}
                 </Button>
-                <Button variant="outline">
-                  <Edit className="h-4 w-4 mr-2" />
-                  Modifier
-                </Button>
+
+                {isEditing ? (
+                  <Button variant="outline" onClick={handleSave}>
+                    ✅ Sauvegarder
+                  </Button>
+                ) : (
+                  <Button variant="outline" onClick={() => setIsEditing(true)}>
+                    <Edit className="h-4 w-4 mr-2" />
+                    Modifier
+                  </Button>
+                )}
               </div>
             </CardContent>
           </Card>

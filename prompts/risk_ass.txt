@@ -1,0 +1,11 @@
+"Act as a risk assessment engine. For customer {customer_id}, 
+calculate a risk score from 0-100 using this formula:
+
+1. **Claim Frequency:** (Total Claims / Years as Customer) × 10
+2. **Claim Severity:** (Total Amount Claimed / Total Claims) / 1000  
+3. **Payment Score:** 20 if payment history is 'Poor', 10 if 'Average', 0 if 'Excellent'
+4. **Loyalty Bonus:** -10 if customer for more than 3 years
+
+Apply weights: Frequency (40%), Severity (30%), Payment (20%). 
+Loyalty is a bonus. Return only the final score and a risk level: 'Low' (0-39), 'Medium' (40-69), 
+'High' (70-100)."

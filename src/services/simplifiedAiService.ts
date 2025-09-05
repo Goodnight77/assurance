@@ -125,7 +125,41 @@ class SimplifiedAIService {
     const customerName = 'NOM_PRENOM' in customer ? customer.NOM_PRENOM : customer.RAISON_SOCIALE;
     const profession = 'LIB_PROFESSION' in customer ? customer.LIB_PROFESSION : customer.LIB_ACTIVITE;
     
-    // Build personalized message
+    // 🤖 Call Fake AI Backend for pitch generation
+    try {
+      const response = await fetch('http://localhost:5000/api/generate-pitch', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          customerId: customer.REF_PERSONNE,
+          clientName: customerName,
+          profession: profession,
+          recommendations: recommendations
+        })
+      });
+
+      if (response.ok) {
+        const aiResult = await response.json();
+        if (aiResult.success) {
+          // Use AI-generated message
+          return {
+            customerId: customer.REF_PERSONNE,
+            recommendations,
+            personalizedMessage: aiResult.commercialPitch.personalizedMessage,
+            salesArguments: this.buildSalesArguments(recommendations),
+            communicationChannel: this.selectOptimalChannel(customerProfile),
+            urgencyLevel: this.determineUrgencyLevel(recommendations),
+            followUpStrategy: this.buildFollowUpStrategy(customerProfile, recommendations)
+          };
+        }
+      }
+    } catch (error) {
+      console.warn('⚠️ AI Backend not available, falling back to local generation');
+    }
+    
+    // Fallback to local generation if AI backend fails
     const greeting = `Cher(e) ${customerName},`;
     
     const mainMessage = this.buildMainMessage(customer, recommendations);

@@ -3,14 +3,59 @@ import { parseExcelArrayBuffer } from '@/lib/excelParser';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import DashboardSidebar from '@/components/DashboardSidebar';
 import LogoBar from '@/components/LogoBar';
+import Analytics from '@/components/Analytics';
 
 const palette = ['#ec0000', '#222', '#fff', '#e5e7eb', '#f3f4f6'];
 
-function getPieData(data: any[]) {
-  return [
-    { name: 'Enregistrements', value: data.length },
-    { name: 'Vide', value: Math.max(0, 100 - data.length) },
-  ];
+function getPieData(data: any[], sheetName: string) {
+  // Enhanced pie data based on sheet type
+  switch (sheetName) {
+    case 'personne_physique':
+      const maleCount = data.filter(p => p.CODE_SEXE === 'M').length;
+      const femaleCount = data.filter(p => p.CODE_SEXE === 'F').length;
+      const unknownCount = data.length - maleCount - femaleCount;
+      return [
+        { name: 'Hommes', value: maleCount, color: '#ec0000' },
+        { name: 'Femmes', value: femaleCount, color: '#222' },
+        ...(unknownCount > 0 ? [{ name: 'Non défini', value: unknownCount, color: '#e5e7eb' }] : [])
+      ];
+      
+    case 'personne_morale':
+      const activeSectors = [...new Set(data.map(p => p.LIB_SECTEUR_ACTIVITE).filter(s => s && s !== 'NULL'))].length;
+      return [
+        { name: 'Secteurs actifs', value: activeSectors, color: '#ec0000' },
+        { name: 'Entreprises', value: data.length, color: '#222' },
+      ];
+      
+    case 'Contrats':
+      const activeContracts = data.filter(c => c.LIB_ETAT_CONTRAT === 'Actif').length;
+      const inactiveContracts = data.length - activeContracts;
+      return [
+        { name: 'Actifs', value: activeContracts, color: '#ec0000' },
+        { name: 'Non-actifs', value: inactiveContracts, color: '#6b7280' },
+      ];
+      
+    case 'sinistres':
+      const resolvedClaims = data.filter(s => s.LIB_ETAT_SINISTRE === 'Règlé').length;
+      const pendingClaims = data.length - resolvedClaims;
+      return [
+        { name: 'Réglés', value: resolvedClaims, color: '#22c55e' },
+        { name: 'En cours', value: pendingClaims, color: '#ec0000' },
+      ];
+      
+    case 'Mapping_Produits':
+      const uniqueProducts = [...new Set(data.map(p => p.LIB_PRODUIT))].length;
+      return [
+        { name: 'Produits uniques', value: uniqueProducts, color: '#ec0000' },
+        { name: 'Mappings totaux', value: data.length, color: '#222' },
+      ];
+      
+    default:
+      return [
+        { name: 'Enregistrements', value: data.length, color: '#ec0000' },
+        { name: 'Vide', value: Math.max(0, 100 - data.length), color: '#e5e7eb' },
+      ];
+  }
 }
 
 export default function Dashboard() {
@@ -104,39 +149,91 @@ export default function Dashboard() {
     return (
       <div className="p-8 w-full space-y-8">
         <h1 className="text-3xl font-bold mb-6 text-[#ec0000]">Dashboard</h1>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {Object.entries(dashboardData).map(([sheet, rows], idx) => (
-            <div key={sheet} className="bg-white rounded-lg shadow p-6 flex flex-col items-center">
-              <h2 className="text-xl font-semibold mb-2 text-[#ec0000]">{sheet}</h2>
-              <p className="text-gray-600 mb-4">{rows.length} enregistrements</p>
-              <div style={{ width: '100%', height: 200 }}>
-                <ResponsiveContainer>
-                  <PieChart>
-                    <Pie
-                      data={getPieData(rows)}
-                      dataKey="value"
-                      nameKey="name"
-                      cx="50%"
-                      cy="50%"
-                      outerRadius={60}
-                      label
-                    >
-                      {getPieData(rows).map((entry, i) => (
-                        <Cell key={`cell-${i}`} fill={palette[i % palette.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                  </PieChart>
-                </ResponsiveContainer>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {Object.entries(dashboardData).map(([sheet, rows], idx) => {
+            const pieData = getPieData(rows, sheet);
+            const getSheetDescription = (sheetName: string) => {
+              switch (sheetName) {
+                case 'personne_physique': return 'Distribution par genre des clients';
+                case 'personne_morale': return 'Secteurs d\'activité et entreprises';
+                case 'Contrats': return 'État des contrats d\'assurance';
+                case 'sinistres': return 'État de traitement des sinistres';
+                case 'Mapping_Produits': return 'Diversité des produits';
+                default: return 'Données disponibles';
+              }
+            };
+            
+            return (
+              <div key={sheet} className="bg-white rounded-lg shadow-lg hover:shadow-xl transition-shadow p-6">
+                <div className="text-center mb-4">
+                  <h2 className="text-lg font-bold text-[#ec0000] mb-1">{sheet}</h2>
+                  <p className="text-xs text-gray-500 mb-2">{getSheetDescription(sheet)}</p>
+                  <div className="text-2xl font-bold text-gray-800">{rows.length}</div>
+                  <div className="text-xs text-gray-600">enregistrements</div>
+                </div>
+                
+                <div style={{ width: '100%', height: 180 }}>
+                  <ResponsiveContainer>
+                    <PieChart>
+                      <Pie
+                        data={pieData}
+                        dataKey="value"
+                        nameKey="name"
+                        cx="50%"
+                        cy="50%"
+                        outerRadius={65}
+                        innerRadius={25}
+                        paddingAngle={2}
+                        label={({ name, percent }) => 
+                          percent > 0.1 ? `${name}: ${(percent * 100).toFixed(0)}%` : ''
+                        }
+                        labelLine={false}
+                        fontSize={10}
+                      >
+                        {pieData.map((entry, i) => (
+                          <Cell key={`cell-${i}`} fill={entry.color || palette[i % palette.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip 
+                        formatter={(value: any, name: any) => [`${value}`, name]}
+                        labelStyle={{ fontWeight: 'bold', color: '#ec0000' }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+                
+                {/* Mini stats */}
+                <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
+                  {pieData.slice(0, 2).map((item, i) => (
+                    <div key={i} className="text-center p-2 bg-gray-50 rounded">
+                      <div className="font-bold text-sm" style={{ color: item.color }}>
+                        {item.value}
+                      </div>
+                      <div className="text-gray-600 truncate">{item.name}</div>
+                    </div>
+                  ))}
+                </div>
+                
+                {/* Progress indicator */}
+                <div className="mt-3">
+                  <div className="flex justify-between text-xs text-gray-600 mb-1">
+                    <span>Complétude</span>
+                    <span>{Math.min(100, (rows.length / 50) * 100).toFixed(0)}%</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-1">
+                    <div 
+                      className="bg-[#ec0000] h-1 rounded-full transition-all duration-300" 
+                      style={{ width: `${Math.min(100, (rows.length / 50) * 100)}%` }}
+                    />
+                  </div>
+                </div>
               </div>
-              <div className="mt-4 w-full flex justify-center">
-                <span className="bg-[#ec0000] text-white px-4 py-1 rounded-full font-bold">
-                  {((rows.length / 100) * 100).toFixed(1)}%
-                </span>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
+        
+        {/* Analytics Section */}
+        <Analytics dashboardData={dashboardData} />
       </div>
     );
   };

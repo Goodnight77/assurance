@@ -67,8 +67,31 @@ export const ChatBot = () => {
     }
   };
 
+  // Helper function to trace chat interactions to fake AI backend
+  const traceChat = async (question: string, answer: string) => {
+    try {
+      await fetch('http://localhost:5000/api/chat-interaction', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          question,
+          answer,
+          sessionId: 'chat_session_' + Date.now(),
+          userId: 'agent_user',
+          timestamp: new Date().toISOString()
+        })
+      });
+    } catch (error) {
+      // Silent fail - backend logging is optional
+      console.log('🤖 AI Backend not available for chat tracing');
+    }
+  };
+
   const processQuery = async (query: string): Promise<string> => {
     const lowerQuery = query.toLowerCase();
+    let response = '';
 
     // Search for specific client by name or reference
     if (lowerQuery.includes('client') || lowerQuery.includes('personne')) {
@@ -88,16 +111,21 @@ export const ChatBot = () => {
           const client = foundClients[0];
           const contracts = dataService.getContractsByCustomer(client.REF_PERSONNE);
           
-          return `Client trouvé: ${client.NOM_PRENOM}
+          response = `Client trouvé: ${client.NOM_PRENOM}
 • Profession: ${client.LIB_PROFESSION}
 • Secteur: ${client.LIB_SECTEUR_ACTIVITE}
 • Localisation: ${client.VILLE_GOUVERNORAT}
 • Nombre de contrats: ${contracts.length}
 • Contrats: ${contracts.map(c => c.LIB_PRODUIT).join(', ')}`;
+          
+          await traceChat(query, response);
+          return response;
         }
       }
       
-      return `J'ai trouvé ${clients.length} personnes physiques et ${entreprises.length} entreprises dans la base. Précisez un nom pour plus d'informations.`;
+      response = `J'ai trouvé ${clients.length} personnes physiques et ${entreprises.length} entreprises dans la base. Précisez un nom pour plus d'informations.`;
+      await traceChat(query, response);
+      return response;
     }
 
     // Contract statistics
@@ -106,11 +134,14 @@ export const ChatBot = () => {
       const activeContracts = contracts.filter(c => c.LIB_ETAT_CONTRAT === 'Actif');
       const branches = [...new Set(contracts.map(c => c.branche))];
       
-      return `Statistiques des contrats:
+      response = `Statistiques des contrats:
 • Total: ${contracts.length} contrats
 • Actifs: ${activeContracts.length}
 • Branches disponibles: ${branches.join(', ')}
 • Valeur totale assurée: ${contracts.reduce((sum, c) => sum + (c.Capital_assure || 0), 0).toLocaleString()} TND`;
+      
+      await traceChat(query, response);
+      return response;
     }
 
     // Claims statistics
@@ -118,10 +149,13 @@ export const ChatBot = () => {
       const sinistres = dataService.getAllClaims();
       const openClaims = sinistres.filter(s => s.LIB_ETAT_SINISTRE === 'Ouvert');
       
-      return `Statistiques des sinistres:
+      response = `Statistiques des sinistres:
 • Total: ${sinistres.length} sinistres
 • En cours: ${openClaims.length}
 • Montant total encaissé: ${sinistres.reduce((sum, s) => sum + (s.MONTANT_ENCAISSE || 0), 0).toLocaleString()} TND`;
+      
+      await traceChat(query, response);
+      return response;
     }
 
     // Analysis requests
@@ -135,15 +169,18 @@ export const ChatBot = () => {
         const profile = await simplifiedAiService.analyzeCustomerProfile(randomClient, contracts, claims);
         const recommendations = await simplifiedAiService.generateRecommendations(profile);
         
-        return `Analyse exemple pour ${randomClient.NOM_PRENOM}:
+        response = `Analyse exemple pour ${randomClient.NOM_PRENOM}:
 • Profil: ${profile.riskProfile.profession} - ${profile.riskProfile.claimsHistory.riskLevel}
 • Produits recommandés: ${recommendations.map(r => r.product.LIB_PRODUIT).join(', ')}
 • Opportunité principale: ${recommendations[0]?.reasoning || 'Aucune recommandation spécifique'}`;
+        
+        await traceChat(query, response);
+        return response;
       }
     }
 
     // General help
-    return `Je peux vous aider avec:
+    response = `Je peux vous aider avec:
 • Recherche de clients spécifiques
 • Statistiques des contrats et sinistres
 • Analyses de profils clients
@@ -153,6 +190,9 @@ Essayez des questions comme:
 - "Montre-moi les contrats de [nom du client]"
 - "Combien de sinistres en cours ?"
 - "Analyse le profil de [nom du client]"`;
+
+    await traceChat(query, response);
+    return response;
   };
 
   const formatTime = (date: Date) => {

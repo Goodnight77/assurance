@@ -58,6 +58,9 @@ class WorkflowService {
   private async executeCustomerAnalysis(customerId: string): Promise<void> {
     this.updateState({ currentStep: 'customer_analysis' });
     
+    // Simulate realistic processing time
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
     // Get customer data
     const customer = dataService.getCustomerById(customerId);
     if (!customer) {
@@ -76,6 +79,8 @@ class WorkflowService {
   // Step 2: Detect gaps (already done in analysis)
   private async executeGapDetection(): Promise<void> {
     this.updateState({ currentStep: 'gap_detection' });
+    // Simulate gap detection processing
+    await new Promise(resolve => setTimeout(resolve, 1500));
     // Gap detection is already included in customer analysis
   }
 
@@ -86,6 +91,9 @@ class WorkflowService {
     if (!this.currentState?.customerProfile) {
       throw new Error('Customer profile not available');
     }
+    
+    // Simulate AI recommendation processing
+    await new Promise(resolve => setTimeout(resolve, 2500));
     
     const recommendations = await simplifiedAiService.generateRecommendations(this.currentState.customerProfile);
     

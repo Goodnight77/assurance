@@ -1,0 +1,21 @@
+flowchart TD
+
+  A[Client Data Excel: Mohamed Arbi , 44, Teacher, Auto only, Poor payment, 3 claims] --> B[App Builds Query]
+  B --> C[Vector Store Chroma + Nomic Embeddings]
+  C -->|Returns: AMALI rules, Teacher → RC Pro, Sales arguments| D[Injected Context]
+
+  %% Prompts
+  D --> E1[Risk Score Prompt
+  Score = 11.1 → Low Risk]
+  D --> E2[Coverage Gap Prompt
+  Missing = Health, AMALI, RC Pro]
+  D --> E3[Improvement Potential Prompt
+  3/10 = 30%]
+  D --> E4[Sales Pitch Prompt 
+  'Guarantee education...' + recommend Health & RC Pro]
+
+  %% Outputs
+  E1 --> F1[Risk Score: 11.1, Low]
+  E2 --> F2[Coverage Gaps: Health, AMALI, RC Pro]
+  E3 --> F3[Improvement Potential: 30%]
+  E4 --> F4[Personalized Pitch + Recommended Products]
